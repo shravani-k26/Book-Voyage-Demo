@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "199948307038",
+    "firebase_url": "https://book-voyage-1ec98-default-rtdb.firebaseio.com",
+    "project_id": "book-voyage-1ec98",
+    "storage_bucket": "book-voyage-1ec98.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:199948307038:android:d7759fd6c5833ed692c2cf",
+        "android_client_info": {
+          "package_name": "com.example.book_voyage_demo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD6jRjI5IwkLASsFtmzVemIVbapQsTAZZI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
