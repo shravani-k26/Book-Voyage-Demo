@@ -1,8 +1,56 @@
+import 'package:book_voyage_demo/home.dart';
 import 'package:flutter/material.dart';
 import 'package:book_voyage_demo/create_account.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-class LoginPage extends StatelessWidget{
+class LoginPage extends StatefulWidget{
   const LoginPage({super.key});
+
+  @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  final _usernameController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  Future<void>login() async{
+    try{
+      final DocumentSnapshot usernameDoc= await _firestore
+          .collection('usernames').doc(_usernameController.text).get();
+
+      if(!usernameDoc.exists){
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Invalid Username")),
+        );
+        return;
+      }
+      final String email=usernameDoc['email'];
+
+      await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: _passwordController.text,
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Login Successful")),
+      );
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context)=>const HomePage()),
+      );
+    }catch(e)
+    {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Login Unsuccessful')
+        ),
+      );
+    }
+  }
   @override
   Widget build(BuildContext context) {
     var theme=Theme.of(context);
@@ -41,23 +89,27 @@ class LoginPage extends StatelessWidget{
                       ),
                       ),
                     ),
-                    const TextField(
-                      decoration: InputDecoration(
+                    TextField(
+                      controller: _usernameController,
+                      decoration: const InputDecoration(
                           prefixIcon: Icon(Icons.person),
                           hintText: 'Username'
                       ),
                     ),
                     const SizedBox(height: 20),
-                    const TextField(
+                    TextField(
+                      controller: _passwordController,
                       obscureText: true,
-                      decoration:InputDecoration(
+                      decoration:const InputDecoration(
                         prefixIcon: Icon(Icons.lock),
                         hintText: 'Password',
                       ) ,
                     ),
                     const SizedBox(height: 30),
                     ElevatedButton(
-                      onPressed: (){},
+                      onPressed: (){
+                        login();
+                      },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Color(0xFF9B2226),
                       ).copyWith(

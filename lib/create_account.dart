@@ -1,11 +1,117 @@
+import 'package:book_voyage_demo/home.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class CreateAccountPage extends StatefulWidget {
   @override
   _CreateAccountState createState() => _CreateAccountState();
 }
 class _CreateAccountState extends State<CreateAccountPage>{
-  TextEditingController _birthday = TextEditingController();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  final _nameController=TextEditingController();
+  final _usernameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  final _birthdayController = TextEditingController();
+
+  Future<void>createAccount() async{
+    try{
+      if (_nameController.text.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Full Name cannot be empty.')),
+        );
+        return;
+      }
+      if (_emailController.text.isEmpty || !RegExp(r"^[a-zA-Z0-9]+@[a-zA-Z0-9]+\.[a-zA-Z]+").hasMatch(_emailController.text)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please enter a valid email address.')),
+        );
+        return;
+      }
+      final birthdayParts = _birthdayController.text.split('/');
+      if (birthdayParts.length != 3) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Invalid birthday format! Use DD/MM/YYYY')),
+        );
+        return;
+      }
+      final day = int.tryParse(birthdayParts[0]);
+      final month = int.tryParse(birthdayParts[1]);
+      final year = int.tryParse(birthdayParts[2]);
+
+      if (day == null || month == null || year == null || month < 1 || month > 12 || day < 1 || day > 31) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Invalid birthday format! Use DD/MM/YYYY')),
+        );
+        return;
+      }
+      final usernameSnapshot = await _firestore.collection('usernames').doc(_usernameController.text).get();
+      if (usernameSnapshot.exists) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Username is already in use. Please choose another one.')),
+        );
+        return;
+      }
+      final birthdayDate = DateTime(year!, month!, day!);
+      if (_passwordController.text.length < 6) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Password should be at least 6 characters long.')),
+        );
+        return;
+      }
+      if (_passwordController.text != _confirmPasswordController.text) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Passwords do not match!'),
+          ),
+        );
+        return;
+      }
+      final UserCredential userCredential=await _auth.createUserWithEmailAndPassword(
+          email: _emailController.text,
+          password: _passwordController.text
+      );
+      final String uid=userCredential.user!.uid;
+      await _firestore.collection('users').doc(uid).set({
+        'fullname': _nameController.text,
+        'username':_usernameController.text,
+        'email': _emailController.text,
+        'birthday': Timestamp.fromDate(birthdayDate),
+      });
+
+      await _firestore.collection('usernames').doc(_usernameController.text).set({
+        'email': _emailController.text,
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Account Created Successfuly')),
+      );
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context)=>const HomePage()),
+      );
+    }on FirebaseAuthException catch (e) {
+      // Check for specific error code when email is already in use
+      if (e.code == 'email-already-in-use') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('The email address is already in use.')),
+        );
+      } else {
+        // For other FirebaseAuthException errors
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${e.message}')),
+        );
+      }
+    }catch(e){
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme=Theme.of(context);
@@ -38,15 +144,17 @@ class _CreateAccountState extends State<CreateAccountPage>{
                       ),
                     ),
                     const SizedBox(height: 40),
-                    const TextField(
-                      decoration: InputDecoration(
+                    TextField(
+                      controller: _nameController,
+                      decoration: const InputDecoration(
                           hintText: "Full Name",
                           prefixIcon: Icon(Icons.person)
                       ),
                     ),
                     const SizedBox(height: 20),
-                    const TextField(
-                      decoration: InputDecoration(
+                    TextField(
+                      controller: _emailController,
+                      decoration: const InputDecoration(
                           hintText: "Email",
                           prefixIcon: Icon(Icons.email)
                       ),
@@ -54,7 +162,7 @@ class _CreateAccountState extends State<CreateAccountPage>{
                     ),
                     const SizedBox(height: 20),
                     TextFormField(
-                      controller: _birthday,
+                      controller: _birthdayController,
                       decoration: const InputDecoration(
                         prefixIcon: Icon(Icons.calendar_month),
                         hintText: "Enter your Birthday (DD/MM/YYYY)",
@@ -69,30 +177,33 @@ class _CreateAccountState extends State<CreateAccountPage>{
                         );
                         if (pickedDate!=null){
                           setState(() {
-                            _birthday.text="${pickedDate.day.toString().padLeft(2,'0')}/${pickedDate.month.toString().padLeft(2,'0')}/${pickedDate.year.toString()}";
+                            _birthdayController.text="${pickedDate.day.toString().padLeft(2,'0')}/${pickedDate.month.toString().padLeft(2,'0')}/${pickedDate.year.toString()}";
                           });
                         }
                       },
                     ),
                     const SizedBox(height: 20),
-                    const TextField(
-                      decoration: InputDecoration(
+                    TextField(
+                      controller: _usernameController,
+                      decoration: const InputDecoration(
                           hintText: "Create Username",
                           prefixIcon: Icon(Icons.person_2)
                       ),
                     ),
                     const SizedBox(height: 20),
-                    const TextField(
+                    TextField(
+                      controller: _passwordController,
                       obscureText: true,
-                      decoration: InputDecoration(
+                      decoration: const InputDecoration(
                         hintText: "Password",
                         prefixIcon: Icon(Icons.lock),
                       ),
                     ),
                     const SizedBox(height: 20),
-                    const TextField(
+                    TextField(
+                      controller: _confirmPasswordController,
                       obscureText: true,
-                      decoration: InputDecoration(
+                      decoration: const InputDecoration(
                         hintText: "Confirm Password",
                         prefixIcon: Icon(Icons.lock),
                       ),
@@ -111,7 +222,9 @@ class _CreateAccountState extends State<CreateAccountPage>{
                           },
                         ),
                       ),
-                      onPressed: (){},
+                      onPressed: (){
+                        createAccount();
+                      },
                       child: const Text("Create Account", style: TextStyle(fontSize: 18, color: Colors.white),),
                     ),
                     const SizedBox(height: 40),
