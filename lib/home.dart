@@ -19,6 +19,7 @@ class HomePage extends StatelessWidget{
         child: Scaffold(
           backgroundColor: Colors.transparent,
           body: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Center(child: Text("Welcome", style: TextStyle(fontSize: 30),)),
               Center(

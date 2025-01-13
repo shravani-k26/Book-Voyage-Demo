@@ -49,6 +49,13 @@ class _CreateAccountState extends State<CreateAccountPage>{
         );
         return;
       }
+      final birthdayDate = DateTime(year!, month!, day!);
+      if (_usernameController.text.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Full Name cannot be empty.')),
+        );
+        return;
+      }
       final usernameSnapshot = await _firestore.collection('usernames').doc(_usernameController.text).get();
       if (usernameSnapshot.exists) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -56,7 +63,7 @@ class _CreateAccountState extends State<CreateAccountPage>{
         );
         return;
       }
-      final birthdayDate = DateTime(year!, month!, day!);
+
       if (_passwordController.text.length < 6) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Password should be at least 6 characters long.')),

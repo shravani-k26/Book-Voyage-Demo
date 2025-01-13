@@ -18,8 +18,22 @@ class _LoginPageState extends State<LoginPage> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
 
+  bool isLoading = false;
+
   Future<void>login() async{
+    setState(() {
+      isLoading = true; // Start loading
+    });
     try{
+      if (_usernameController.text.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please Enter Username')),
+        );
+        setState(() {
+          isLoading = false; // Stop loading
+        });
+        return;
+      }
       final DocumentSnapshot usernameDoc= await _firestore
           .collection('usernames').doc(_usernameController.text).get();
 
@@ -27,6 +41,18 @@ class _LoginPageState extends State<LoginPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Invalid Username")),
         );
+        setState(() {
+          isLoading = false; // Stop loading
+        });
+        return;
+      }
+      if (_passwordController.text.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please Enter Password')),
+        );
+        setState(() {
+          isLoading = false; // Stop loading
+        });
         return;
       }
       final String email=usernameDoc['email'];
@@ -49,6 +75,10 @@ class _LoginPageState extends State<LoginPage> {
             content: Text('Login Unsuccessful')
         ),
       );
+    }finally {
+      setState(() {
+        isLoading = false; // Stop loading
+      });
     }
   }
   @override
@@ -106,7 +136,9 @@ class _LoginPageState extends State<LoginPage> {
                       ) ,
                     ),
                     const SizedBox(height: 30),
-                    ElevatedButton(
+                    isLoading
+                    ?Center(child: CircularProgressIndicator())
+                    : ElevatedButton(
                       onPressed: (){
                         login();
                       },
