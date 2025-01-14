@@ -34,21 +34,22 @@ class _LoginPageState extends State<LoginPage> {
         });
         return;
       }
-      final DocumentSnapshot usernameDoc= await _firestore
-          .collection('usernames').doc(_usernameController.text).get();
-
-      if(!usernameDoc.exists){
+      if (_passwordController.text.isEmpty){
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Invalid Username")),
+          const SnackBar(content: Text('Please Enter Password')),
         );
         setState(() {
           isLoading = false; // Stop loading
         });
         return;
       }
-      if (_passwordController.text.isEmpty) {
+
+      final DocumentSnapshot usernameDoc= await _firestore
+          .collection('usernames').doc(_usernameController.text).get();
+
+      if(!usernameDoc.exists){
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please Enter Password')),
+          const SnackBar(content: Text("Invalid Username")),
         );
         setState(() {
           isLoading = false; // Stop loading
@@ -72,7 +73,7 @@ class _LoginPageState extends State<LoginPage> {
     {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('Login Unsuccessful')
+            content: Text("Login Failed")
         ),
       );
     }finally {

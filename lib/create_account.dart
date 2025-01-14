@@ -18,18 +18,29 @@ class _CreateAccountState extends State<CreateAccountPage>{
   final _confirmPasswordController = TextEditingController();
   final _birthdayController = TextEditingController();
 
+  bool isLoading = false;
+
   Future<void>createAccount() async{
+    setState(() {
+      isLoading = true; // Start loading
+    });
     try{
       if (_nameController.text.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Full Name cannot be empty.')),
         );
+        setState(() {
+          isLoading = false; // Stop loading
+        });
         return;
       }
       if (_emailController.text.isEmpty || !RegExp(r"^[a-zA-Z0-9]+@[a-zA-Z0-9]+\.[a-zA-Z]+").hasMatch(_emailController.text)) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Please enter a valid email address.')),
         );
+        setState(() {
+          isLoading = false; // Stop loading
+        });
         return;
       }
       final birthdayParts = _birthdayController.text.split('/');
@@ -37,6 +48,9 @@ class _CreateAccountState extends State<CreateAccountPage>{
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Invalid birthday format! Use DD/MM/YYYY')),
         );
+        setState(() {
+          isLoading = false; // Stop loading
+        });
         return;
       }
       final day = int.tryParse(birthdayParts[0]);
@@ -47,13 +61,19 @@ class _CreateAccountState extends State<CreateAccountPage>{
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Invalid birthday format! Use DD/MM/YYYY')),
         );
+        setState(() {
+          isLoading = false; // Stop loading
+        });
         return;
       }
       final birthdayDate = DateTime(year!, month!, day!);
       if (_usernameController.text.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Full Name cannot be empty.')),
+          const SnackBar(content: Text('Username cannot be empty.')),
         );
+        setState(() {
+          isLoading = false; // Stop loading
+        });
         return;
       }
       final usernameSnapshot = await _firestore.collection('usernames').doc(_usernameController.text).get();
@@ -61,6 +81,9 @@ class _CreateAccountState extends State<CreateAccountPage>{
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Username is already in use. Please choose another one.')),
         );
+        setState(() {
+          isLoading = false; // Stop loading
+        });
         return;
       }
 
@@ -68,6 +91,9 @@ class _CreateAccountState extends State<CreateAccountPage>{
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Password should be at least 6 characters long.')),
         );
+        setState(() {
+          isLoading = false; // Stop loading
+        });
         return;
       }
       if (_passwordController.text != _confirmPasswordController.text) {
@@ -76,6 +102,9 @@ class _CreateAccountState extends State<CreateAccountPage>{
             content: Text('Passwords do not match!'),
           ),
         );
+        setState(() {
+          isLoading = false; // Stop loading
+        });
         return;
       }
       final UserCredential userCredential=await _auth.createUserWithEmailAndPassword(
@@ -117,6 +146,11 @@ class _CreateAccountState extends State<CreateAccountPage>{
         SnackBar(content: Text('Error: $e')),
       );
     }
+    finally {
+      setState(() {
+        isLoading = false; // Stop loading
+      });
+    }
   }
 
   @override
@@ -142,7 +176,7 @@ class _CreateAccountState extends State<CreateAccountPage>{
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Padding(
-                      padding: const EdgeInsets.only(top: 40),
+                      padding: const EdgeInsets.only(top: 25),
                       child: Container(
                         child: Text("Create Account",
                           textAlign: TextAlign.center,
@@ -150,7 +184,11 @@ class _CreateAccountState extends State<CreateAccountPage>{
                         ),
                       ),
                     ),
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 10,),
+                    Container(height: 150,
+                        width: 300,
+                        child: Image.asset("assets/images/acc_logo.png")
+                    ),
                     TextField(
                       controller: _nameController,
                       decoration: const InputDecoration(
@@ -177,6 +215,38 @@ class _CreateAccountState extends State<CreateAccountPage>{
                       onTap: () async {
                         FocusScope.of(context).requestFocus(FocusNode());
                         DateTime? pickedDate= await showDatePicker(
+                          builder: (BuildContext context, Widget? child){
+                            return Theme(
+                                data: ThemeData(
+                                  colorScheme: const ColorScheme.light(
+                                    primary: Color(0xFFE07A5F),
+                                    onPrimary: Colors.white,
+                                  ),
+                                  textSelectionTheme: const TextSelectionThemeData(
+                                    cursorColor: Color(0xFF9B2226),
+                                    selectionColor: Color(0xFFCF6F72),
+                                    selectionHandleColor: Color(0xFF9B2226),
+                                  ),
+                                  dialogBackgroundColor: const Color(0xFFFEF7DC),
+                                  inputDecorationTheme: InputDecorationTheme(
+                                    focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(30.0),
+                                        borderSide: const BorderSide(
+                                          color: Color(0xFFE07A5F),
+                                          width: 2,
+                                        )
+                                    ),
+                                    filled: true,
+                                    fillColor: const Color(0xFFECE2D0),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(30),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                  ),
+                                ),
+                                child: child!,
+                            );
+                          },
                           context: context,
                           initialDate: DateTime.now(),
                           firstDate: DateTime(1900),
@@ -216,7 +286,9 @@ class _CreateAccountState extends State<CreateAccountPage>{
                       ),
                     ),
                     const SizedBox(height: 20),
-                    ElevatedButton(
+                    isLoading
+                    ?Center(child: CircularProgressIndicator())
+                    :ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: theme.primaryColor,
                       ).copyWith(

@@ -55,6 +55,14 @@ class MyApp extends StatelessWidget {
             color: Colors.black,
           ),
         ),
+        progressIndicatorTheme: const ProgressIndicatorThemeData(
+          color: Color(0xFF9B2226),
+        ),
+        textSelectionTheme: const TextSelectionThemeData(
+          cursorColor: Color(0xFF9B2226),
+          selectionColor: Color(0xFFCF6F72),
+          selectionHandleColor: Color(0xFF9B2226),
+        ),
       ),
       home: const LoginPage(),
     );
